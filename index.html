@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escala Metalizada | Equipa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        input[type="date"] { color-scheme: dark; }
+        /* Estilos Metálicos */
+        .bg-metal-dark { background: linear-gradient(145deg, #18181b, #27272a); }
+        .text-metal-silver { background: linear-gradient(to right, #e2e8f0, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .text-metal-gold { background: linear-gradient(to right, #fef08a, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .shadow-metal { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(255, 255, 255, 0.05) inset; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #18181b; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #52525b; border-radius: 2px; }
+    </style>
+</head>
+<body class="bg-zinc-950 min-h-screen text-zinc-300 font-sans p-4 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-black">
+    <div class="max-w-7xl mx-auto">
+        
+        <nav class="bg-metal-dark p-2 rounded-xl shadow-metal border border-zinc-800 mb-6 flex flex-wrap gap-2 justify-center sm:justify-start">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-5 py-2.5 rounded-lg text-sm font-bold bg-zinc-800 border border-zinc-600 text-white shadow-inner transition-all flex items-center gap-2">
+                <i class="fas fa-calendar-alt text-zinc-400"></i> Escala Diária
+            </button>
+            <button onclick="switchTab('pessoal')" id="tab-pessoal" class="px-5 py-2.5 rounded-lg text-sm font-medium text-zinc-400 border border-transparent hover:border-zinc-700 hover:bg-zinc-800 transition-all flex items-center gap-2">
+                <i class="fas fa-user-circle"></i> Minha Escala
+            </button>
+        <button onclick="switchTab('supervisor')" id="tab-supervisor" class="px-5 py-2.5 rounded-lg text-sm font-medium text-amber-500 border border-transparent hover:border-amber-700 hover:bg-zinc-800 transition-all flex items-center gap-2">
+                <i class="fas fa-user-tie"></i> Área do Supervisor
+            </button>
+        </nav>
+
+        <div id="view-dashboard" class="tab-content active">
+            <header class="bg-metal-dark p-4 md:p-6 rounded-xl border border-zinc-800 mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-metal">
+                <div>
+                    <h1 class="text-3xl font-black text-metal-silver uppercase tracking-wider">Gestão de Escala</h1>
+                    <p class="text-zinc-500 text-sm mt-1 flex items-center gap-2">
+                        <i class="fas fa-cogs text-zinc-400"></i> Organização por horários e atribuições diárias
+                    </p>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="changeDay(-1)" class="flex-1 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-lg text-sm border border-zinc-700 text-zinc-300 font-medium transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
+                    <button onclick="goToday()" class="px-6 py-2 bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500 rounded-lg text-sm font-bold text-white shadow-metal border border-zinc-500 transition-all">Hoje</button>
+                    <button onclick="changeDay(1)" class="flex-1 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-lg text-sm border border-zinc-700 text-zinc-300 font-medium transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
+                    <div class="w-full sm:w-auto relative flex items-center mt-2 sm:mt-0">
+                        <i class="far fa-calendar-alt absolute left-3 text-zinc-500 z-10"></i>
+                        <input type="date" id="date-picker" onchange="onCustomDate(event)" class="w-full pl-10 pr-4 py-2 border border-zinc-700 rounded-lg text-sm bg-zinc-900 text-white cursor-pointer outline-none focus:border-zinc-500 shadow-inner">
+                    </div>
+                </div>
+            </header>
+
+            <div class="mb-6 flex items-center gap-4 px-2">
+                <div class="w-12 h-12 bg-gradient-to-br from-zinc-700 to-zinc-900 border border-zinc-600 rounded-lg flex items-center justify-center shadow-metal">
+                    <i class="far fa-calendar-check text-xl text-zinc-300"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-white tracking-wide drop-shadow-md" id="display-date">--/--/----</h2>
+                    <p class="text-xs font-semibold text-zinc-400 mt-1 uppercase tracking-widest" id="summary-text">A carregar...</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col xl:flex-row gap-6 items-start">
+                
+                <div class="flex-1 w-full space-y-6" id="schedule-groups">
+                    <!-- Gerado por JS (Agrupado por Horário) -->
+                </div>
+
+                <aside class="w-full xl:w-80 2xl:w-96 flex-shrink-0 sticky top-4">
+                    <!-- Quadro de Avisos -->
+                    <div class="bg-metal-dark rounded-xl border border-zinc-800 shadow-metal overflow-hidden mb-5">
+                        <div class="bg-gradient-to-r from-zinc-800 to-zinc-900 p-4 border-b border-zinc-700 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-bullhorn text-amber-500 text-lg"></i>
+                                <h3 class="font-bold text-zinc-100 uppercase tracking-wider text-sm">Quadro de Avisos</h3>
+                            </div>
+                            <span id="announcements-count" class="bg-zinc-800 text-xs px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 font-bold shadow-inner">0</span>
+                        </div>
+                        <div class="p-4 space-y-3 max-h-80 overflow-y-auto custom-scrollbar" id="announcements-list">
+                            <!-- Avisos renderizados aqui -->
+                        </div>
+                    </div>
+                    <div class="bg-metal-dark rounded-xl border border-zinc-800 shadow-metal overflow-hidden">
+                        <div class="bg-gradient-to-r from-zinc-800 to-zinc-900 p-4 border-b border-zinc-700 flex items-center gap-3">
+                            <i class="fas fa-shield-alt text-zinc-400 text-lg"></i>
+                            <h3 class="font-bold text-zinc-100 uppercase tracking-wider text-sm">Painel de Funções</h3>
+                        </div>
+                        
+                        <div class="p-5 space-y-5">
+                            <div class="p-3 bg-zinc-900/80 rounded-lg border border-zinc-800 shadow-inner">
+                                <h4 class="text-metal-silver font-bold text-xs uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <i class="fas fa-headset"></i> Atendimento (SAC)
+                                </h4>
+                                <p class="text-[11px] text-zinc-400 leading-relaxed mb-3">
+                                    Cumpre as funções primárias de atendimento ao cliente (SAC) nas plataformas <span class="text-zinc-200 font-medium">Octadesk</span> e <span class="text-zinc-200 font-medium">Bitrix</span>.
+                                </p>
+                                <div id="sac-team" class="flex flex-wrap gap-1.5"></div>
+                            </div>
+
+                            <hr class="border-zinc-800">
+
+                            <div>
+                                <h4 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Funções Extras Diárias</h4>
+                                <div id="extra-functions-list" class="space-y-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        <div id="view-pessoal" class="tab-content">
+            <div class="bg-metal-dark p-6 md:p-8 rounded-xl border border-zinc-800 shadow-metal max-w-3xl mx-auto">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 bg-zinc-800 border border-zinc-700 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-user-astronaut text-xl text-zinc-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-metal-silver">Área do Colaborador</h2>
+                        <p class="text-zinc-500 text-sm">Consulte as suas folgas e Days Off de forma segura.</p>
+                    </div>
+                </div>
+                
+                <div id="personal-login" class="max-w-md mx-auto py-4 text-center">
+                    <div class="w-14 h-14 bg-zinc-800 border border-zinc-700 rounded-full flex items-center justify-center mx-auto mb-3 shadow-metal">
+                        <i class="fas fa-lock text-xl text-zinc-400"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">Identificação Necessária</h3>
+                    <p class="text-zinc-500 text-xs mb-5">Insira o seu nome e senha pessoal para aceder à escala.</p>
+                    <select id="personal-user-select" class="w-full p-3 bg-zinc-900 border border-zinc-700 rounded-lg text-zinc-200 mb-3 outline-none focus:border-zinc-500 shadow-inner text-center font-semibold">
+                        <option value="">Selecione o seu nome...</option>
+                    </select>
+                    <input type="password" id="personal-pass" placeholder="Senha pessoal..." class="w-full p-3 bg-zinc-900 border border-zinc-700 rounded-lg text-white mb-4 outline-none focus:border-zinc-500 shadow-inner text-center tracking-widest">
+                    <button onclick="loginPersonal()" class="w-full px-4 py-3 bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500 rounded-lg font-bold text-white shadow-metal transition-all uppercase tracking-wider text-sm">Aceder à Minha Escala</button>
+                    <p id="personal-error" class="text-red-400 text-xs mt-3 hidden"><i class="fas fa-exclamation-triangle"></i> Senha incorreta ou utilizador inválido.</p>
+                </div>
+
+                <div id="personal-panel" class="hidden">
+                    <div class="flex justify-between items-center mb-6 border-b border-zinc-800 pb-4">
+                        <div>
+                            <h3 id="personal-logged-title" class="text-xl font-bold text-white"></h3>
+                            <p class="text-xs text-zinc-500">Visualização restrita pessoal.</p>
+                        </div>
+                        <button onclick="logoutPersonal()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 rounded-lg text-xs font-bold text-zinc-300 transition-colors"><i class="fas fa-sign-out-alt"></i> Sair / Trocar</button>
+                    </div>
+
+                    <div class="mb-6 max-w-xs">
+                        <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Selecione o Mês</label>
+                        <select id="month-selector" onchange="renderPersonalView()" class="w-full p-3 bg-zinc-900 border border-zinc-700 rounded-lg text-zinc-200 outline-none focus:border-zinc-500 shadow-inner"><option value="">Selecione o mês...</option></select>
+                    </div>
+
+                    <div id="personal-results" class="hidden">
+                        <div class="p-6 bg-zinc-900/60 rounded-xl border border-zinc-800">
+                            <h3 id="personal-greeting" class="text-xl font-bold text-white mb-1"></h3>
+                            <p id="personal-summary" class="text-zinc-400 text-sm mb-6"></p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-zinc-800">
+                                <div>
+                                    <h4 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fas fa-bed"></i> Folgas Normais</h4>
+                                    <ul id="list-folgas" class="space-y-2 text-sm text-zinc-300"></ul>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fas fa-plane"></i> Day Offs</h4>
+                                    <ul id="list-dayoffs" class="space-y-2 text-sm text-zinc-300"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+        <div id="view-supervisor" class="tab-content">
+            <div id="sup-login" class="max-w-md mx-auto bg-metal-dark p-6 md:p-8 rounded-xl border border-zinc-800 shadow-metal text-center mt-10">
+                <div class="w-16 h-16 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-2xl text-amber-500"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-metal-silver mb-2">Área do Supervisor</h2>
+                <p class="text-zinc-500 text-sm mb-6">Insira a senha de acesso para gerir a escala.</p>
+                <select id="sup-user" class="w-full p-3 bg-zinc-900 border border-zinc-700 rounded-lg text-zinc-300 mb-3 outline-none focus:border-amber-500 shadow-inner text-center font-semibold">
+                    <option value="matheus">Matheus (Supervisor)</option>
+                    <option value="lidiana">Lidiana (Gerente)</option>
+                    <option value="iago">Iago (Focal)</option>
+                </select>
+                <input type="password" id="sup-pass" placeholder="Senha..." class="w-full p-3 bg-zinc-900 border border-zinc-700 rounded-lg text-white mb-4 outline-none focus:border-amber-500 shadow-inner text-center tracking-widest">
+                <button onclick="loginSupervisor()" class="w-full px-4 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 rounded-lg font-bold text-white shadow-metal transition-all uppercase tracking-wider text-sm">Desbloquear Painel</button>
+                <p id="sup-error" class="text-red-400 text-xs mt-3 hidden"><i class="fas fa-exclamation-triangle"></i> Senha incorreta.</p>
+            </div>
+
+            <div id="sup-panel" class="hidden bg-metal-dark p-6 md:p-8 rounded-xl border border-zinc-800 shadow-metal max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-zinc-800 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-metal-gold flex items-center gap-2"><i class="fas fa-crown"></i> Gestão de Escala</h2>
+                        <p class="text-zinc-400 text-sm">Modo de edição. As alterações efetuadas aqui são atualizadas no painel em tempo real.</p>
+                    </div>
+                    <button onclick="logoutSupervisor()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 rounded-lg text-xs font-bold text-zinc-300 transition-colors"><i class="fas fa-sign-out-alt"></i> Sair do Modo Edição</button>
+                </div>
+                
+                <div class="mb-6 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-500 uppercase tracking-wider mb-2">Selecione o Colaborador / Escala</label>
+                        <select id="sup-agent-selector" onchange="renderSupervisorEditor()" class="w-full p-3 bg-zinc-950 border border-zinc-700 rounded-lg text-zinc-200 outline-none focus:border-amber-500 shadow-inner">
+                            <option value="todos">👥 Toda a Equipa (Geral)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-500 uppercase tracking-wider mb-2">Selecione a Data para Editar</label>
+                        <select id="sup-date-selector" onchange="renderSupervisorEditor()" class="w-full p-3 bg-zinc-950 border border-zinc-700 rounded-lg text-zinc-200 outline-none focus:border-amber-500 shadow-inner"></select>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <label class="block text-xs font-bold text-transparent uppercase tracking-wider select-none">Ação</label>
+                            <span id="sup-last-mod" class="text-[10px] text-amber-500/80 italic font-bold"></span>
+                        </div>
+                        <button onclick="saveSupervisorChanges()" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 rounded-lg font-bold text-white shadow-metal transition-all flex justify-center items-center gap-2">
+                            <i class="fas fa-save"></i> Gravar Alterações
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Painel de Gerenciamento de Avisos -->
+                <div class="mb-6 bg-zinc-900/50 p-5 rounded-lg border border-zinc-800 shadow-inner">
+                    <h3 class="text-lg font-bold text-amber-500 mb-4 flex items-center gap-2"><i class="fas fa-clipboard-list"></i> Gerir Avisos Diários</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div class="md:col-span-2">
+                            <input type="text" id="sup-aviso-texto" placeholder="Escreva o aviso (ex: Mudança de procedimento...)" class="w-full p-3 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-zinc-200 outline-none focus:border-amber-500 shadow-inner">
+                        </div>
+                        <div>
+                            <select id="sup-aviso-tag" class="w-full p-3 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-zinc-200 outline-none focus:border-amber-500 shadow-inner">
+                                <option value="Urgente">🔴 Urgente</option>
+                                <option value="Correção">🟠 Correção</option>
+                                <option value="Alerta">🟡 Alerta</option>
+                                <option value="Dia a dia">🔵 Dia a dia</option>
+                                <option value="Anúncio">🟢 Anúncio</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="sup-aviso-turno" class="w-full p-3 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-zinc-200 outline-none focus:border-amber-500 shadow-inner">
+                                <option value="Todos os Turnos">Todos os Turnos</option>
+                                <option value="Turno da Manhã">Manhã</option>
+                                <option value="Turno da Tarde">Tarde</option>
+                                <option value="Turno da Noite">Noite</option>
+                                <option value="Madrugada">Madrugada</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-4 flex justify-end">
+                            <button onclick="addAnnouncement()" class="px-5 py-2.5 bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500 border border-zinc-500 rounded-lg text-sm font-bold text-white shadow-metal transition-all flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Publicar Aviso
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="sup-avisos-lista" class="space-y-2 mt-4 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                        <!-- Lista de avisos -->
+                    </div>
+                </div>
+                
+                <div id="sup-editor" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    <!-- Cards de edição gerados aqui -->
+                </div>
+            </div>
+        </div>
+
+    <script>
+        let scheduleData = {"01/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "02/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "03/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "04/09/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "05/09/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "06/09/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "07/09/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "08/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "09/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "10/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "11/09/2026": [{"nome": "Gabriel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "12/09/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "13/09/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "14/09/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "15/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "16/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "17/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "18/09/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "19/09/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "Day Off", "isFolga": false, "isDayOff": true, "atribuicoes": []}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "20/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "21/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "22/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "Férias", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "23/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "24/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "Day Off", "isFolga": false, "isDayOff": true, "atribuicoes": []}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "25/09/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "26/09/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "27/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "28/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "29/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "30/09/2026": [{"nome": "Gabriel", "horario": "12h - 21h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "01/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "02/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "03/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "04/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "05/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "06/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "07/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "08/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "09/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "10/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "11/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "12/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "13/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "14/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "15/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "16/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "17/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "18/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "19/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "20/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "21/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "22/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "23/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "24/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "25/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Reclameaqui", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "26/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Jocelmo", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Monitorias", "Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "27/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "28/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}], "29/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Reclameaqui"]}, {"nome": "Liliane", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Matheus", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Relatorios Atendimento", "Supervisão"]}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "Victor Pimentel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}], "30/10/2026": [{"nome": "Gabriel", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Reclameaqui"]}, {"nome": "Iago Duarte", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Controle Certeiro", "Noticias E Blogs"]}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}], "31/10/2026": [{"nome": "Gabriel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Iago Duarte", "horario": "08h - 17h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Resolução De Tickets", "Monitorias", "Relatorios Atendimento", "Focal"]}, {"nome": "Jocelmo", "horario": "10h - 19h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Gabriel", "horario": "05h50 - 14h50", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix"]}, {"nome": "João Pedro", "horario": "13h - 22h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro", "Reclameaqui"]}, {"nome": "Liliane", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Matheus", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}, {"nome": "Morian", "horario": "22h - 06h", "isFolga": false, "isDayOff": false, "atribuicoes": ["Atendimento Octadesk", "Atendimento Bitrix", "Controle Certeiro"]}, {"nome": "Victor Pimentel", "horario": "Folga", "isFolga": true, "isDayOff": false, "atribuicoes": []}]};
+        const availableDates = Object.keys(scheduleData);
+        let currentIndex = 0;
+        let scheduleMeta = {};
+        let currentLoggedUser = '';
+        let announcementsData = {};
+
+        const extraFunctionsDef = {
+            'Reclameaqui': { icon: 'fas fa-bullhorn', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20', desc: 'Responsável pelo atendimento, resolução e respostas delicadas que foram reclamadas no site ReclameAqui.' },
+            'Controle Certeiro': { icon: 'fas fa-crosshairs', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', desc: 'Realização de controle e testes de qualidade da plataforma Certeiro.' },
+            'Noticias E Blogs': { icon: 'fas fa-newspaper', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', desc: 'Responsável por alimentar os blogs institucionais com notícias atualizadas.' },
+            'Monitorias': { icon: 'fas fa-desktop', color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20', desc: 'Funções específicas de avaliação e monitoria da qualidade.' },
+            'Focal': { icon: 'fas fa-star', color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20', desc: 'Ponto focal para resolução de problemas complexos e suporte específico à equipa.' },
+            'Supervisão': { icon: 'fas fa-crown', color: 'text-metal-gold', bg: 'bg-amber-500/10 border-amber-500/30', desc: 'Gestão da equipa, apoio e relatórios.' },
+            'Resolução De Tickets': { icon: 'fas fa-ticket-alt', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', desc: 'Tratamento de tickets avançados e resoluções.' },
+            'Relatorios Atendimento': { icon: 'fas fa-chart-bar', color: 'text-cyan-400', bg: 'bg-cyan-500/10 border-cyan-500/20', desc: 'Construção de relatórios estatísticos.' }
+        };
+
+        function init() {
+            const saved = localStorage.getItem('escalaMetalizadaData_v1');
+            if(saved) {
+                try { scheduleData = JSON.parse(saved); } catch(e) {}
+            }
+            const savedMeta = localStorage.getItem('escalaMetalizadaMeta_v1');
+            if(savedMeta) {
+                try { scheduleMeta = JSON.parse(savedMeta); } catch(e) {}
+            }
+            const savedAvisos = localStorage.getItem('escalaMetalizadaAvisos_v1');
+            if(savedAvisos) {
+                try { announcementsData = JSON.parse(savedAvisos); } catch(e) {}
+            }
+            extractAgents();
+            const today = new Date();
+            const todayStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+            const index = availableDates.indexOf(todayStr);
+            currentIndex = index !== -1 ? index : 0;
+            renderDashboard();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + tabId).classList.add('active');
+            document.querySelectorAll('nav button').forEach(el => {
+                el.classList.remove('bg-zinc-800', 'border-zinc-600', 'text-white', 'shadow-inner');
+                el.classList.add('text-zinc-400', 'border-transparent');
+            });
+            const activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.classList.remove('text-zinc-400', 'border-transparent');
+            activeBtn.classList.add('bg-zinc-800', 'border-zinc-600', 'text-white', 'shadow-inner');
+        }
+
+        function changeDay(step) {
+            const newIndex = currentIndex + step;
+            if (newIndex >= 0 && newIndex < availableDates.length) { currentIndex = newIndex; renderDashboard(); }
+        }
+
+        function goToday() {
+            const today = new Date();
+            const todayStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+            const index = availableDates.indexOf(todayStr);
+            if (index !== -1) { currentIndex = index; } else { alert('A data de hoje não está na escala. A mostrar o primeiro dia.'); currentIndex = 0; }
+            renderDashboard();
+        }
+
+        function onCustomDate(e) {
+            const val = e.target.value;
+            if(!val) return;
+            const [yyyy, mm, dd] = val.split('-');
+            const dateStr = `${dd}/${mm}/${yyyy}`;
+            const index = availableDates.indexOf(dateStr);
+            if(index !== -1) { currentIndex = index; renderDashboard(); } else { alert("Data não encontrada na escala."); }
+        }
+
+        function sortHorarios(a, b) {
+            const descA = a.includes('Descanso');
+            const descB = b.includes('Descanso');
+            if(descA && !descB) return 1;
+            if(!descA && descB) return -1;
+            return a.localeCompare(b);
+        }
+
+        function renderDashboard() {
+            if (availableDates.length === 0) return;
+            const dateStr = availableDates[currentIndex];
+            const data = scheduleData[dateStr];
+            
+            const [dd, mm, yyyy] = dateStr.split('/');
+            const dateObj = new Date(yyyy, mm - 1, dd);
+            const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            
+            document.getElementById('display-date').innerText = `${diasSemana[dateObj.getDay()]} - ${dateStr}`;
+            document.getElementById('date-picker').value = `${yyyy}-${mm}-${dd}`;
+            
+            const working = data.filter(p => !p.isFolga && !p.isDayOff).length;
+            const resting = data.filter(p => p.isFolga || p.isDayOff).length;
+            let metaInfo = '';
+            let changedAgentsList = [];
+            let metaData = scheduleMeta[dateStr];
+            if(metaData) {
+                if(typeof metaData === 'string') {
+                    metaInfo = ` <span class="mx-2 text-zinc-700">|</span> <span class="text-amber-500/90 italic font-bold text-[10px]">* Última alteração por ${metaData}</span>`;
+                } else {
+                    metaInfo = ` <span class="mx-2 text-zinc-700">|</span> <span class="text-amber-500/90 italic font-bold text-[10px]">* Última alteração por ${metaData.user}</span>`;
+                    changedAgentsList = metaData.changedAgents || [];
+                }
+            }
+            document.getElementById('summary-text').innerHTML = `<span class="text-zinc-200">${working} EM TURNO</span> <span class="mx-2 text-zinc-700">|</span> <span class="text-zinc-500">${resting} EM DESCANSO</span>${metaInfo}`;
+
+            const groups = {};
+            const activeRoles = {};
+            const sacMembers = [];
+
+            data.forEach(p => {
+                let hLabel = p.horario;
+                if(p.isFolga || p.isDayOff || ['férias', 'atestado', 'falta injustificada'].includes(hLabel.toLowerCase())) hLabel = 'Descanso / Ausente';
+                
+                if(!groups[hLabel]) groups[hLabel] = [];
+                groups[hLabel].push(p);
+
+                if(!p.isFolga && !p.isDayOff && hLabel !== 'Descanso / Ausente') {
+                    const hasSac = p.atribuicoes.some(a => a.toLowerCase().includes('octadesk') || a.toLowerCase().includes('bitrix'));
+                    if (hasSac) sacMembers.push(p.nome);
+
+                    p.atribuicoes.forEach(attr => {
+                        if (!attr.toLowerCase().includes('octadesk') && !attr.toLowerCase().includes('bitrix')) {
+                            if (!activeRoles[attr]) activeRoles[attr] = [];
+                            activeRoles[attr].push(p.nome);
+                        }
+                    });
+                }
+            });
+
+            renderAnnouncements();
+            renderSidebar(sacMembers, activeRoles);
+
+            const container = document.getElementById('schedule-groups');
+            container.innerHTML = '';
+            const sortedHorarios = Object.keys(groups).sort(sortHorarios);
+
+            sortedHorarios.forEach(horario => {
+                const pessoas = groups[horario];
+                const isDescanso = horario === 'Descanso / Ausente';
+                const headerIcon = isDescanso ? 'fas fa-power-off text-zinc-500' : 'far fa-clock text-metal-silver';
+                const borderH = isDescanso ? 'border-zinc-800 bg-zinc-950/50' : 'border-zinc-700 bg-metal-dark';
+
+                let html = `
+                    <div class="rounded-xl border ${borderH} p-4 md:p-5 shadow-inner">
+                        <h3 class="text-lg font-bold text-zinc-100 flex items-center gap-2 mb-4 uppercase tracking-wide">
+                            <i class="${headerIcon}"></i> ${horario}
+                            <span class="ml-2 px-2 py-0.5 bg-zinc-800 text-zinc-400 text-xs rounded-full border border-zinc-700">${pessoas.length}</span>
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                `;
+
+                pessoas.forEach(p => {
+                    const isChanged = changedAgentsList.includes(p.nome);
+                    let statusCardClass = isDescanso ? 'opacity-60 bg-zinc-950 border-zinc-800' : 'bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-600 shadow-metal';
+                    if (isChanged) {
+                        statusCardClass = isDescanso 
+                            ? 'opacity-80 bg-zinc-950 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.1)]' 
+                            : 'bg-gradient-to-br from-zinc-800 to-zinc-900 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]';
+                    }
+                    const nameColor = isDescanso ? 'text-zinc-500' : (p.nome.toLowerCase() === 'matheus' ? 'text-metal-gold' : 'text-zinc-200');
+                    const changedTag = isChanged ? `<div class="absolute -top-2.5 -right-2 bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded shadow-metal uppercase tracking-widest animate-pulse border border-amber-400 z-10">Alterado</div>` : '';
+                    
+                    // CORREÇÃO AQUI: "Descansando" em vez de "Trabalhando"
+                    const hLower = p.horario.toLowerCase();
+                    const realStatusLabel = p.isDayOff ? 'Day Off' : (hLower === 'férias' ? 'Férias' : (hLower === 'atestado' ? 'Atestado' : (hLower === 'falta injustificada' ? 'Falta Injustificada' : (p.isFolga ? 'Descansando' : 'Trabalhando'))));
+                    
+                    const statusDotClass = isDescanso ? 'bg-zinc-600' : 'bg-green-500 shadow-[0_0_8px_#22c55e]';
+
+                    let badgesHtml = '';
+                    if (!isDescanso && p.atribuicoes.length > 0) {
+                        const extras = p.atribuicoes.filter(a => !a.toLowerCase().includes('octadesk') && !a.toLowerCase().includes('bitrix'));
+                        const hasSac = p.atribuicoes.some(a => a.toLowerCase().includes('octadesk') || a.toLowerCase().includes('bitrix'));
+                        
+                        let badgesArray = [];
+                        if (hasSac) {
+                            badgesArray.push(`<span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] uppercase font-bold rounded border bg-sky-500/10 border-sky-500/20 text-sky-400"><i class="fas fa-headset text-[9px]"></i> Atendimento SAC</span>`);
+                        }
+                        
+                        if (extras.length > 0) {
+                            badgesArray.push(...extras.map(ext => {
+                                const conf = extraFunctionsDef[ext] || { icon: 'fas fa-check', color: 'text-zinc-400', bg: 'bg-zinc-800 border-zinc-700' };
+                                return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] uppercase font-bold rounded border ${conf.bg} ${conf.color}"><i class="${conf.icon} text-[9px]"></i> ${ext}</span>`;
+                            }));
+                        }
+                        
+                        if (badgesArray.length > 0) {
+                            badgesHtml = badgesArray.join('');
+                        }
+                    }
+
+                    html += `
+                        <div class="p-4 rounded-lg border ${statusCardClass} relative mt-2">
+                            ${changedTag}
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-base ${nameColor}">${p.nome}</h4>
+                                    <div class="flex items-center gap-1.5 text-[11px] text-zinc-400 mt-0.5 uppercase tracking-wider font-semibold">
+                                        <div class="w-1.5 h-1.5 rounded-full ${statusDotClass}"></div> ${realStatusLabel}
+                                    </div>
+                                </div>
+                            </div>
+                            ${badgesHtml ? `<div class="mt-3 flex flex-wrap gap-1.5">${badgesHtml}</div>` : ''}
+                            ${p.observacao ? `<div class="mt-3 bg-amber-500/10 border border-amber-500/20 p-2 rounded text-[11px] text-amber-200/90 italic flex items-start gap-1.5 leading-relaxed"><i class="fas fa-info-circle mt-0.5 text-amber-500"></i> <span>${p.observacao}</span></div>` : ''}
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+                container.innerHTML += html;
+            });
+        }
+
+        
+        function renderAnnouncements() {
+            if (availableDates.length === 0) return;
+            const dateStr = availableDates[currentIndex];
+            const avisos = announcementsData[dateStr] || [];
+            const listEl = document.getElementById('announcements-list');
+            const countEl = document.getElementById('announcements-count');
+            
+            if(countEl) countEl.innerText = avisos.length;
+            
+            if(!listEl) return;
+            
+            if(avisos.length === 0) {
+                listEl.innerHTML = '<p class="text-xs text-zinc-500 italic text-center py-6">Nenhum aviso para hoje.</p>';
+                return;
+            }
+
+            const tagStyles = {
+                'Urgente': 'bg-red-500/10 border-red-500/30 text-red-400',
+                'Correção': 'bg-orange-500/10 border-orange-500/30 text-orange-400',
+                'Alerta': 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400',
+                'Dia a dia': 'bg-blue-500/10 border-blue-500/30 text-blue-400',
+                'Anúncio': 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+            };
+            
+            const tagIcons = {
+                'Urgente': 'fas fa-exclamation-circle',
+                'Correção': 'fas fa-wrench',
+                'Alerta': 'fas fa-exclamation-triangle',
+                'Dia a dia': 'fas fa-coffee',
+                'Anúncio': 'fas fa-bullhorn'
+            };
+
+            listEl.innerHTML = avisos.map(a => `
+                <div class="p-3 rounded-lg border ${tagStyles[a.tag] || tagStyles['Dia a dia']} relative overflow-hidden shadow-inner">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10px] uppercase font-black tracking-wider flex items-center gap-1.5"><i class="${tagIcons[a.tag]}"></i> ${a.tag}</span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-950/70 uppercase tracking-widest opacity-90 border border-current shadow">${a.turno}</span>
+                    </div>
+                    <p class="text-xs font-medium text-zinc-200 leading-relaxed mt-2">${a.text}</p>
+                    <div class="mt-2 text-[9px] text-right opacity-70 italic font-medium">Por ${a.autor}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderSidebar(sacMembers, activeRoles) {
+            const sacContainer = document.getElementById('sac-team');
+            if (sacMembers.length > 0) {
+                sacContainer.innerHTML = sacMembers.map(m => `<span class="px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-[11px] text-zinc-300 font-medium">${m}</span>`).join('');
+            } else {
+                sacContainer.innerHTML = `<span class="text-[11px] text-zinc-500 italic">Nenhum operador listado para hoje.</span>`;
+            }
+
+            const extraContainer = document.getElementById('extra-functions-list');
+            extraContainer.innerHTML = '';
+            
+            if (Object.keys(activeRoles).length === 0) {
+                extraContainer.innerHTML = `<p class="text-[11px] text-zinc-500 italic">Nenhuma função extra alocada hoje.</p>`;
+                return;
+            }
+
+            for (const role in activeRoles) {
+                const def = extraFunctionsDef[role] || { icon: 'fas fa-star', color: 'text-zinc-300', bg: 'bg-zinc-800', desc: 'Função operacional.' };
+                const assignees = activeRoles[role].join(', ');
+                extraContainer.innerHTML += `
+                    <div class="p-3 bg-zinc-900/50 rounded-lg border border-zinc-800 shadow-inner">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <i class="${def.icon} ${def.color} text-xs"></i>
+                            <h5 class="font-bold text-xs text-zinc-200 uppercase tracking-wide">${role}</h5>
+                        </div>
+                        <p class="text-[11px] text-zinc-400 mb-2 leading-relaxed">${def.desc}</p>
+                        <div class="text-[10px] font-medium text-zinc-500 bg-zinc-950 p-1.5 rounded border border-zinc-800/80">
+                            Responsável(eis): <span class="text-zinc-300">${assignees}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        const personalPasswords = {
+            'gabriel': '101520',
+            'joão pedro': '253035',
+            'jocelmo': '404550',
+            'liliane': '556065',
+            'victor pimentel': '707580',
+            'joão gabriel': '859095',
+            'morian': '100105',
+            'iago': '2026logame',
+            'matheus': '31102026'
+        };
+
+        let currentPersonalUser = '';
+
+        function extractAgents() {
+            const agentsSet = new Set();
+            for (let date in scheduleData) scheduleData[date].forEach(p => agentsSet.add(p.nome));
+            const selector = document.getElementById('personal-user-select');
+            if(selector) {
+                selector.innerHTML = '<option value="">Selecione o seu nome...</option>';
+                Array.from(agentsSet).sort().forEach(nome => selector.innerHTML += `<option value="${nome}">${nome}</option>`);
+            }
+        }
+
+        function loginPersonal() {
+            const selectEl = document.getElementById('personal-user-select');
+            const passEl = document.getElementById('personal-pass');
+            const errorEl = document.getElementById('personal-error');
+            
+            const selectedName = selectEl.value;
+            const pass = passEl.value;
+            
+            if(!selectedName) {
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            const key = selectedName.toLowerCase();
+            if(pass === 'supervisor2026' || (personalPasswords[key] && personalPasswords[key] === pass)) {
+                currentPersonalUser = selectedName;
+                errorEl.classList.add('hidden');
+                passEl.value = '';
+                document.getElementById('personal-login').classList.add('hidden');
+                document.getElementById('personal-panel').classList.remove('hidden');
+                document.getElementById('personal-logged-title').innerText = `Colaborador: ${selectedName}`;
+                populatePersonalMonths(selectedName);
+            } else {
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        function logoutPersonal() {
+            currentPersonalUser = '';
+            document.getElementById('personal-panel').classList.add('hidden');
+            document.getElementById('personal-login').classList.remove('hidden');
+            document.getElementById('personal-user-select').value = '';
+            document.getElementById('personal-pass').value = '';
+            document.getElementById('personal-results').classList.add('hidden');
+        }
+
+        function populatePersonalMonths(nome) {
+            const monthSelector = document.getElementById('month-selector');
+            const mesesMap = { '09': 'Setembro', '10': 'Outubro' };
+            const availableMonths = new Set();
+            for (let date in scheduleData) {
+                const shift = scheduleData[date].find(p => p.nome === nome);
+                if (shift) availableMonths.add(date.split('/')[1]);
+            }
+
+            monthSelector.innerHTML = '<option value="">Selecione o mês...</option>';
+            Array.from(availableMonths).sort().forEach(mm => monthSelector.innerHTML += `<option value="${mm}">${mesesMap[mm] || mm} / 2026</option>`);
+            document.getElementById('personal-results').classList.add('hidden');
+        }
+
+        function formatFriendlyDate(dateStr) {
+            const [dd, mm, yyyy] = dateStr.split('/');
+            const dateObj = new Date(yyyy, mm - 1, dd);
+            const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            return `${parseInt(dd, 10)} - ${diasSemana[dateObj.getDay()]}`;
+        }
+
+        window.renderPersonalView = function() {
+            const nome = currentPersonalUser;
+            const selectedMonth = document.getElementById('month-selector').value;
+            const resultsDiv = document.getElementById('personal-results');
+            if (!nome || !selectedMonth) { resultsDiv.classList.add('hidden'); return; }
+
+            let folgas = []; let dayoffs = [];
+            for (let date in scheduleData) {
+                if (date.split('/')[1] === selectedMonth) {
+                    const shift = scheduleData[date].find(p => p.nome === nome);
+                    if (shift) {
+                        if (shift.isFolga) folgas.push(formatFriendlyDate(date) + (shift.horario.toLowerCase() === 'férias' ? ' (Férias)' : ''));
+                        if (shift.isDayOff) dayoffs.push(formatFriendlyDate(date));
+                    }
+                }
+            }
+
+            const mesesMap = { '09': 'Setembro', '10': 'Outubro' };
+            resultsDiv.classList.remove('hidden');
+            document.getElementById('personal-greeting').innerText = `Olá, ${nome}`;
+            document.getElementById('personal-summary').innerText = `Resumo de descansos para ${mesesMap[selectedMonth]}: ${folgas.length} dias de folga e ${dayoffs.length} Day Off(s).`;
+            
+            document.getElementById('list-folgas').innerHTML = folgas.length > 0 ? folgas.map(d => `<li class="flex items-center gap-2 bg-zinc-950 p-2.5 rounded-lg border border-zinc-800"><i class="fas fa-calendar-day text-zinc-500 text-xs"></i> ${d}</li>`).join('') : '<li class="text-zinc-500 text-xs">Nenhum registo.</li>';
+            document.getElementById('list-dayoffs').innerHTML = dayoffs.length > 0 ? dayoffs.map(d => `<li class="flex items-center gap-2 bg-zinc-900 p-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium"><i class="fas fa-star text-zinc-400 text-xs"></i> ${d}</li>`).join('') : '<li class="text-zinc-500 text-xs">Nenhum registo.</li>';
+        }
+
+        
+        const todasFuncoesPossiveis = ['Atendimento Octadesk', 'Atendimento Bitrix', 'Reclameaqui', 'Controle Certeiro', 'Noticias E Blogs', 'Monitorias', 'Focal', 'Supervisão', 'Resolução De Tickets', 'Relatorios Atendimento'];
+        const horariosPossiveis = ['08h - 17h', '10h - 19h', '12h - 21h', '13h - 22h', '05h50 - 14h50', '22h - 06h', 'Folga', 'Day Off', 'Férias', 'Atestado', 'Falta injustificada'];
+
+        function loginSupervisor() {
+            const user = document.getElementById('sup-user').value;
+            const pass = document.getElementById('sup-pass').value;
+            
+            const credentials = {
+                'matheus': '31102026',
+                'lidiana': 'logame2026',
+                'iago': '2026logame'
+            };
+            const userLabels = {
+                'matheus': 'Matheus (Supervisor)',
+                'lidiana': 'Lidiana (Gerente)',
+                'iago': 'Iago (Focal)'
+            };
+
+            if(credentials[user] === pass) {
+                currentLoggedUser = userLabels[user];
+                document.getElementById('sup-login').classList.add('hidden');
+                document.getElementById('sup-panel').classList.remove('hidden');
+                document.getElementById('sup-pass').value = '';
+                document.getElementById('sup-error').classList.add('hidden');
+                populateSupDates();
+            } else {
+                document.getElementById('sup-error').classList.remove('hidden');
+            }
+        }
+
+        function logoutSupervisor() {
+            document.getElementById('sup-panel').classList.add('hidden');
+            document.getElementById('sup-login').classList.remove('hidden');
+            switchTab('dashboard');
+        }
+
+        function populateSupDates() {
+            const sel = document.getElementById('sup-date-selector');
+            sel.innerHTML = '';
+            availableDates.forEach(d => {
+                sel.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+            sel.value = availableDates[currentIndex];
+
+            // Populate Agent Selector in Supervisor panel
+            const agentSel = document.getElementById('sup-agent-selector');
+            const agentsSet = new Set();
+            for (let date in scheduleData) scheduleData[date].forEach(p => agentsSet.add(p.nome));
+            agentSel.innerHTML = '<option value="todos">👥 Toda a Equipa (Geral)</option>';
+            Array.from(agentsSet).sort().forEach(nome => {
+                agentSel.innerHTML += `<option value="${nome}">👤 ${nome}</option>`;
+            });
+
+            renderSupervisorEditor();
+        }
+
+        function renderSupervisorEditor() {
+            const dateStr = document.getElementById('sup-date-selector').value;
+            const selectedAgent = document.getElementById('sup-agent-selector').value;
+            const data = scheduleData[dateStr];
+            const container = document.getElementById('sup-editor');
+            const lastModSpan = document.getElementById('sup-last-mod');
+            const metaData = scheduleMeta[dateStr];
+            
+            if (lastModSpan) {
+                if(metaData) {
+                    lastModSpan.innerText = (typeof metaData === 'string') ? `* Última alteração por ${metaData}` : `* Última alteração por ${metaData.user}`;
+                } else {
+                    lastModSpan.innerText = '';
+                }
+            }
+            container.innerHTML = '';
+
+            // Filter data if a specific agent is selected
+            let itemsToRender = [];
+            data.forEach((p, idx) => {
+                if (selectedAgent === 'todos' || p.nome === selectedAgent) {
+                    itemsToRender.push({ p, index: idx });
+                }
+            });
+
+            if(itemsToRender.length === 0) {
+                container.innerHTML = `<p class="text-zinc-500 text-sm col-span-full text-center py-8">Nenhum registo encontrado para este colaborador nesta data.</p>`;
+                return;
+            }
+
+            renderSupervisorAnnouncements();
+
+            itemsToRender.forEach(({ p, index }) => {
+                let funcCheckboxes = todasFuncoesPossiveis.map(f => {
+                    const isChecked = p.atribuicoes.includes(f) ? 'checked' : '';
+                    return `
+                        <label class="flex items-center gap-2 text-[10px] uppercase font-bold text-zinc-400 bg-zinc-950 p-1.5 rounded border border-zinc-800 cursor-pointer hover:border-amber-500/50 transition-colors">
+                            <input type="checkbox" value="${f}" class="sup-cb-${index} accent-amber-500" ${isChecked}> ${f}
+                        </label>
+                    `;
+                }).join('');
+
+                let horarioOptions = horariosPossiveis.map(h => {
+                    const isSelected = (h === p.horario || (h === 'Folga' && p.isFolga) || (h === 'Day Off' && p.isDayOff)) ? 'selected' : '';
+                    return `<option value="${h}" ${isSelected}>${h}</option>`;
+                }).join('');
+
+                const obsValue = p.observacao || '';
+
+                container.innerHTML += `
+                    <div class="bg-zinc-900/80 border border-zinc-700/80 rounded-xl p-5 shadow-metal relative" data-index="${index}">
+                        <h4 class="font-bold text-amber-400 mb-4 text-lg flex items-center gap-2"><i class="fas fa-user-astronaut text-sm text-zinc-500"></i> ${p.nome}</h4>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-zinc-500 mb-1.5">Status / Horário</label>
+                                <select class="sup-horario w-full bg-zinc-950 border border-zinc-700 rounded-lg text-sm font-semibold text-zinc-200 p-2.5 outline-none focus:border-amber-500 shadow-inner">
+                                    ${horarioOptions}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-zinc-500 mb-1.5">Atribuições Ativas</label>
+                                <div class="grid grid-cols-2 gap-2 h-32 overflow-y-auto pr-2 custom-scrollbar bg-zinc-900/50 p-2 rounded-lg border border-zinc-800/50">
+                                    ${funcCheckboxes}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-zinc-500 mb-1.5">Observações Diárias</label>
+                                <input type="text" class="sup-obs w-full bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-zinc-200 p-2.5 outline-none focus:border-amber-500 placeholder-zinc-600 shadow-inner" placeholder="Ex: Cobre o turno do João..." value="${obsValue}">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        
+        function renderSupervisorAnnouncements() {
+            const dateStr = document.getElementById('sup-date-selector').value;
+            const avisos = announcementsData[dateStr] || [];
+            const listEl = document.getElementById('sup-avisos-lista');
+            
+            if(!listEl) return;
+            
+            if(avisos.length === 0) {
+                listEl.innerHTML = '<p class="text-xs text-zinc-500 italic p-2">Nenhum aviso configurado para esta data.</p>';
+                return;
+            }
+            
+            listEl.innerHTML = avisos.map((a, i) => `
+                <div class="flex items-center justify-between p-3 bg-zinc-950 border border-zinc-800 rounded-lg shadow-inner group hover:border-zinc-600 transition-colors">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="text-[10px] bg-zinc-800 px-2 py-0.5 rounded text-zinc-300 font-bold border border-zinc-700">${a.tag}</span>
+                            <span class="text-[10px] text-zinc-500 font-medium"><i class="far fa-clock"></i> ${a.turno}</span>
+                        </div>
+                        <p class="text-sm text-zinc-200 font-medium">${a.text}</p>
+                    </div>
+                    <button onclick="removeAnnouncement(${i})" class="text-red-500 hover:text-red-400 hover:bg-red-500/10 transition-colors p-2.5 rounded-lg border border-transparent hover:border-red-500/20 ml-4"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function addAnnouncement() {
+            const dateStr = document.getElementById('sup-date-selector').value;
+            const textEl = document.getElementById('sup-aviso-texto');
+            const text = textEl.value.trim();
+            const tag = document.getElementById('sup-aviso-tag').value;
+            const turno = document.getElementById('sup-aviso-turno').value;
+            
+            if(!text) {
+                textEl.focus();
+                return;
+            }
+            
+            if(!announcementsData[dateStr]) announcementsData[dateStr] = [];
+            
+            const autor = currentLoggedUser.split(' ')[0]; // Ex: "Matheus"
+            
+            announcementsData[dateStr].push({ id: Date.now(), text, tag, turno, autor });
+            
+            textEl.value = '';
+            saveAnnouncementsData();
+            renderSupervisorAnnouncements();
+        }
+
+        function removeAnnouncement(index) {
+            const dateStr = document.getElementById('sup-date-selector').value;
+            if(announcementsData[dateStr]) {
+                announcementsData[dateStr].splice(index, 1);
+                saveAnnouncementsData();
+                renderSupervisorAnnouncements();
+            }
+        }
+
+        function saveAnnouncementsData() {
+            localStorage.setItem('escalaMetalizadaAvisos_v1', JSON.stringify(announcementsData));
+            // Atualiza o painel visual se a data for a mesma
+            if (availableDates[currentIndex] === document.getElementById('sup-date-selector').value) {
+                renderAnnouncements();
+            }
+        }
+
+        function saveSupervisorChanges() {
+            const dateStr = document.getElementById('sup-date-selector').value;
+            const container = document.getElementById('sup-editor');
+            const cards = container.querySelectorAll('[data-index]');
+            
+            let changedAgentsThisSave = [];
+            cards.forEach(card => {
+                const idx = card.getAttribute('data-index');
+                const p = scheduleData[dateStr][idx];
+                
+                const oldState = JSON.stringify({ h: p.horario, a: p.atribuicoes.slice().sort(), o: p.observacao || '' });
+                
+                const horarioVal = card.querySelector('.sup-horario').value;
+                if(['Folga', 'Férias', 'Atestado', 'Falta injustificada'].includes(horarioVal)) {
+                    p.horario = horarioVal; p.isFolga = true; p.isDayOff = false; p.atribuicoes = [];
+                } else if(horarioVal === 'Day Off') {
+                    p.horario = 'Day Off'; p.isFolga = false; p.isDayOff = true; p.atribuicoes = [];
+                } else {
+                    p.horario = horarioVal; p.isFolga = false; p.isDayOff = false;
+                    
+                    const cbs = card.querySelectorAll(`.sup-cb-${idx}:checked`);
+                    p.atribuicoes = Array.from(cbs).map(cb => cb.value);
+                }
+
+                const obs = card.querySelector('.sup-obs').value;
+                if(obs.trim() !== '') {
+                    p.observacao = obs.trim();
+                } else {
+                    delete p.observacao;
+                }
+                
+                const newState = JSON.stringify({ h: p.horario, a: p.atribuicoes.slice().sort(), o: p.observacao || '' });
+                if(oldState !== newState) {
+                    changedAgentsThisSave.push(p.nome);
+                }
+            });
+
+            localStorage.setItem('escalaMetalizadaData_v1', JSON.stringify(scheduleData));
+            
+            if (changedAgentsThisSave.length > 0) {
+                scheduleMeta[dateStr] = { user: currentLoggedUser, changedAgents: changedAgentsThisSave };
+                localStorage.setItem('escalaMetalizadaMeta_v1', JSON.stringify(scheduleMeta));
+            }
+            
+            const btn = container.parentElement.querySelector('button[onclick="saveSupervisorChanges()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Gravado com Sucesso!';
+            btn.classList.replace('from-green-600', 'from-emerald-600');
+            btn.classList.replace('to-green-700', 'to-emerald-700');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.replace('from-emerald-600', 'from-green-600');
+                btn.classList.replace('to-emerald-700', 'to-green-700');
+            }, 2000);
+            
+            if(availableDates[currentIndex] === dateStr) {
+                renderDashboard();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
